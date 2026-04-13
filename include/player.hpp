@@ -4,7 +4,11 @@
 class Player {
 public:
     Player();
-    void move();
+    void update();
+
+private:
+    int x;
+    int y;
 };
 
 #endif

@@ -3,7 +3,7 @@
 
 int main() {
     Player p;
-    p.move();//Commentaire fghgdsfjfdjfrjhrejhgrjrejkrejkhrejkhrgjh
+    p.update();//Commentaire fghgdsfjfdjfrjhrejhgrjrejkrejkhrejkhrgjh
     std::cout << "Project started" << std::endl;
     return 0;
 }

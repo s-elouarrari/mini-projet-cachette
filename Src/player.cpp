@@ -1,12 +1,10 @@
-<<<<<<< HEAD
 #include "../include/player.hpp"
 
-Player::Player() {}
+// Le nom doit être update() car c'est ce qui est écrit dans player.hpp
+Player::Player() {
+    // Initialisation de ton joueur ici
+}
 
-=======
-#include "../include/player.hpp"
-
-Player::Player() {}
-
->>>>>>> 031d84e0fc9afef5425224eec2c16725bf25dfc5
-void Player::move() {}
+void Player::update() {
+    // C'est ici que tu mettras la logique pour courir ou sauter
+}

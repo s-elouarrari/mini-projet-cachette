@@ -2,10 +2,15 @@
 1776450446 source:c:\users\dell\documents\fssm\miniprojetcachette\src\entity.cpp
 	"Entity.hpp"
 
-1776421879 source:c:\users\dell\documents\fssm\miniprojetcachette\src\game.cpp
+1776450890 source:c:\users\dell\documents\fssm\miniprojetcachette\src\game.cpp
+	"Game.hpp"
+	"Utils.hpp"
+	<cmath>
+	<algorithm>
+	<sstream>
 
-1776446069 source:c:\users\dell\documents\fssm\miniprojetcachette\src\main.cpp
-	<SFML/Graphics.hpp>
+1776450890 source:c:\users\dell\documents\fssm\miniprojetcachette\src\main.cpp
+	"Game.hpp"
 
 1700319743 c:\msys64\ucrt64\include\sfml\graphics.hpp
 	<SFML/Window.hpp>
@@ -427,9 +432,14 @@
 
 1776421681 source:c:\users\dell\documents\fssm\miniprojetcachette\src\menu.cpp
 
-1776421710 source:c:\users\dell\documents\fssm\miniprojetcachette\src\obstacle.cpp
+1776450890 source:c:\users\dell\documents\fssm\miniprojetcachette\src\obstacle.cpp
+	"Obstacle.hpp"
+	"Utils.hpp"
+	<cmath>
 
-1776421886 source:c:\users\dell\documents\fssm\miniprojetcachette\src\player.cpp
+1776450890 source:c:\users\dell\documents\fssm\miniprojetcachette\src\player.cpp
+	"Player.hpp"
+	"Utils.hpp"
 
 1775735172 c:\msys64\ucrt64\include\stdint.h
 	<crtdefs.h>
@@ -465,4 +475,28 @@
 
 1776450491 c:\users\dell\documents\fssm\miniprojetcachette\include\entity.hpp
 	<SFML/Graphics.hpp>
+
+1776450890 c:\users\dell\documents\fssm\miniprojetcachette\include\game.hpp
+	<SFML/Graphics.hpp>
+	<vector>
+	<memory>
+	"Player.hpp"
+	"Obstacle.hpp"
+	"Utils.hpp"
+
+1776450890 c:\users\dell\documents\fssm\miniprojetcachette\include\player.hpp
+	"Entity.hpp"
+
+1776450890 c:\users\dell\documents\fssm\miniprojetcachette\include\obstacle.hpp
+	"Entity.hpp"
+
+1776452676 c:\users\dell\documents\fssm\miniprojetcachette\include\utils.hpp
+	<SFML/Graphics.hpp>
+	<string>
+
+1776450890 source:c:\users\dell\documents\fssm\miniprojetcachette\src\utils.cpp
+	"Utils.hpp"
+	<random>
+	<sstream>
+	<iomanip>
 

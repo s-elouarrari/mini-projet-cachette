@@ -1,20 +1,12 @@
-#include <SFML/Graphics.hpp>
+#include "Game.hpp"
+
+// ============================================================
+//  main.cpp — Point d'entrée minimal
+//  Toute la logique est dans la classe Game
+// ============================================================
 
 int main() {
-    sf::RenderWindow window(sf::VideoMode(800, 600), "Test SFML 2.6 - FSSM");
-    sf::CircleShape shape(50.f);
-    shape.setFillColor(sf::Color::Green);
-    shape.setPosition(350.f, 250.f);
-
-    while (window.isOpen()) {
-        sf::Event event;
-        while (window.pollEvent(event)) {
-            if (event.type == sf::Event::Closed)
-                window.close();
-        }
-        window.clear();
-        window.draw(shape);
-        window.display();
-    }
+    Game game;
+    game.run();
     return 0;
 }

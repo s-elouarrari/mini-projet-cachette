@@ -14,13 +14,13 @@ namespace Constants {
     constexpr const char*  WINDOW_TITLE    = "Station Evac: Hull Breach";
 
     // Gameplay
-    constexpr float PRESSURE_MAX          = 30.0f;   // secondes d'oxygène
-    constexpr float DISTANCE_TO_CAPSULE   = 1000.0f; // unités de progression
+    constexpr float PRESSURE_MAX               = 30.0f;  // secondes d'oxygène
+    constexpr float SURVIVAL_TIME_FOR_CAPSULE  = 20.0f;  // secondes de survie pour remplir la barre à 100%
     constexpr float OBSTACLE_SPAWN_INTERVAL_MIN = 1.2f;
     constexpr float OBSTACLE_SPAWN_INTERVAL_MAX = 2.8f;
-    constexpr float SCROLL_SPEED_BASE     = 300.0f;
-    constexpr float SCROLL_SPEED_MAX      = 550.0f;
-    constexpr float SPEED_INCREMENT       = 10.0f;
+    constexpr float SCROLL_SPEED_BASE          = 300.0f;
+    constexpr float SCROLL_SPEED_MAX           = 550.0f;
+    constexpr float SPEED_INCREMENT            = 10.0f;
 
     // Positions sol
     constexpr float GROUND_Y              = 490.0f;

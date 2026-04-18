@@ -2,21 +2,21 @@
 #include <SFML/Graphics.hpp>
 #include <vector>
 #include <memory>
-#include "Player.hpp"
+#include "player.hpp"
 #include "Obstacle.hpp"
 #include "Utils.hpp"
 
 // ============================================================
-//  Game.hpp — Cœur du jeu (Tableaux + Pointeurs)
+//  Game.hpp — Cœur du jeu
+//  Structure simplifiée, commentée pour niveau L2
 // ============================================================
 
+// Les différents états possibles du jeu
 enum class GameState {
-    MAIN_MENU,
-    INTRO_CINEMATIC,
-    PLAYING,
-    PAUSED,
-    VICTORY,
-    GAME_OVER
+    MAIN_MENU,   // Écran d'accueil avec le bouton "Start"
+    PLAYING,     // Partie en cours
+    VICTORY,     // Le robot a atteint la capsule => WIN
+    GAME_OVER    // Collision avec un obstacle => GAME OVER
 };
 
 class Game {
@@ -24,33 +24,52 @@ public:
     Game();
     ~Game();
 
-    void run();
+    void run(); // Boucle principale : events => update => render
 
 private:
-    // --- Fenêtre et horloge ---
+    // -------------------------------------------------------
+    //  Fenetre, horloge et police
+    // -------------------------------------------------------
     sf::RenderWindow m_window;
     sf::Clock        m_clock;
     sf::Font         m_font;
 
-    // --- État du jeu ---
+    // -------------------------------------------------------
+    //  Etat du jeu
+    // -------------------------------------------------------
     GameState m_state;
-    float     m_pressureTimer;       // Oxygène restant
-    float     m_distanceTraveled;    // Progression vers la capsule
-    float     m_scrollSpeed;         // Vitesse de défilement actuelle
-    float     m_spawnTimer;          // Délai avant prochain obstacle
-    float     m_nextSpawnInterval;   // Intervalle aléatoire
-    float     m_cinematicTimer;      // Durée cinématique intro/fin
-    int       m_cinematicStep;       // Étape de la cinématique
-    float     m_finalScore;          // Temps restant à la victoire
-    bool      m_shakeActive;         // Tremblement d'écran
-    float     m_shakeTimer;
-    sf::Vector2f m_shakeOffset;
 
-    // --- Entités ---
-    std::unique_ptr<Player>              m_player;
+    // Temps de survie accumule (0 -> SURVIVAL_TIME_FOR_CAPSULE)
+    // Quand il atteint 100%, la capsule apparait
+    float m_survivalTime;
+
+    // Vitesse de defilement (augmente progressivement)
+    float m_scrollSpeed;
+
+    // Timer pour l'apparition des obstacles
+    float m_spawnTimer;
+    float m_nextSpawnInterval;
+
+    // Score final affiche sur l'ecran de victoire
+    float m_finalScore;
+
+    // -------------------------------------------------------
+    //  Entites du jeu
+    // -------------------------------------------------------
+    std::unique_ptr<Player>                m_player;
     std::vector<std::unique_ptr<Obstacle>> m_obstacles;
 
-    // --- Décor (parallaxe) ---
+    // -------------------------------------------------------
+    //  Capsule de sauvetage
+    // -------------------------------------------------------
+    bool               m_capsuleVisible;  // Apparait quand la barre est a 100%
+    float              m_capsuleX;        // Position X (entre par la droite)
+    sf::RectangleShape m_capsule;
+    sf::CircleShape    m_capsuleWindow;
+
+    // -------------------------------------------------------
+    //  Decor : etoiles (2 couches de parallaxe)
+    // -------------------------------------------------------
     struct StarLayer {
         std::vector<sf::CircleShape> stars;
         float speed;
@@ -64,50 +83,46 @@ private:
     };
     std::vector<PanelStrip> m_bgPanels;
 
-    // --- HUD ---
-    sf::RectangleShape m_pressureBarBg;
-    sf::RectangleShape m_pressureBarFill;
-    sf::RectangleShape m_progressBarBg;
-    sf::RectangleShape m_progressBarFill;
+    // -------------------------------------------------------
+    //  Elements visuels : sol, plafond, HUD
+    // -------------------------------------------------------
     sf::RectangleShape m_floorRect;
     sf::RectangleShape m_ceilingRect;
 
-    // --- Capsule de sauvetage ---
-    sf::RectangleShape m_capsule;
-    sf::CircleShape    m_capsuleWindow;
-    bool               m_capsuleVisible;
-    float              m_capsuleX;
+    sf::RectangleShape m_progressBarBg;
+    sf::RectangleShape m_progressBarFill;
 
-    // --- Méthodes privées ---
+    // -------------------------------------------------------
+    //  Tremblement d'ecran (screen shake)
+    // -------------------------------------------------------
+    bool         m_shakeActive;
+    float        m_shakeTimer;
+    sf::Vector2f m_shakeOffset;
+
+    // -------------------------------------------------------
+    //  Methodes privees
+    // -------------------------------------------------------
     void processEvents();
     void update(float deltaTime);
     void render();
 
-    // Sous-méthodes update
     void updatePlaying(float deltaTime);
-    void updateCinematic(float deltaTime);
-    void updateShake(float deltaTime);
-    void spawnObstacle();
     void checkCollisions();
+    void spawnObstacle();
     void cleanObstacles();
-    void updateScrollSpeed(float deltaTime);
     void updateParallax(float deltaTime);
+    void updateShake(float deltaTime);
 
-    // Sous-méthodes render
     void drawBackground();
     void drawHUD();
+    void drawCapsule();
     void drawMainMenu();
-    void drawIntroCinematic();
     void drawVictoryScreen();
     void drawGameOverScreen();
-    void drawCapsule();
-    void drawScreenShake();
 
-    // Helpers menu
-    void startGame();
-    void resetGame();
-    void triggerScreenShake(float duration);
-
-    bool loadFont();
+    void     startGame();
+    void     resetGame();
+    void     triggerScreenShake(float duration);
+    bool     loadFont();
     sf::Text makeText(const std::string& str, unsigned int size, sf::Color color);
 };

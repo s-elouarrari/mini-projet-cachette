@@ -1,4 +1,4 @@
-#include "Game.hpp"
+#include "game.hpp"
 
 // ============================================================
 //  main.cpp — Point d'entrée minimal

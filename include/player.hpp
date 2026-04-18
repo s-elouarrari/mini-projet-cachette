@@ -2,19 +2,15 @@
 #include "Entity.hpp"
 
 // ============================================================
-//  Player.hpp — Classe Joueur (Encapsulation stricte)
+//  Player.hpp — Le robot joueur
+//  Encapsulation : tous les attributs sont prives
 // ============================================================
 
-enum class PlayerState {
-    HEALTHY,
-    HURT,
-    DEAD
-};
-
+// Action actuelle du joueur (utile pour les animations)
 enum class PlayerAction {
-    IDLE,
-    JUMPING,
-    CROUCHING
+    IDLE,      // Marche normale
+    JUMPING,   // En l'air
+    CROUCHING  // Accroupi
 };
 
 class Player : public Entity {
@@ -22,40 +18,36 @@ public:
     Player(float startX, float startY);
     ~Player() override;
 
+    // Methodes principales (surchargees depuis Entity)
     void update(float deltaTime) override;
     void draw(sf::RenderWindow& window) override;
 
+    // Actions du joueur
     void jump();
     void crouch(bool isCrouching);
-    void takeDamage();
 
-    PlayerState  getState()  const;
+    // Accesseur
     PlayerAction getAction() const;
-    bool         canTakeDamage() const;
 
 private:
-    static constexpr float GRAVITY          = 1200.0f;
-    static constexpr float JUMP_FORCE       = -560.0f;
-    static constexpr float GROUND_Y         = 430.0f;
-    static constexpr float NORMAL_HEIGHT    = 60.0f;
-    static constexpr float CROUCH_HEIGHT    = 30.0f;
-    static constexpr float INVINCIBILITY_TIME = 1.5f;
+    // Constantes physiques du joueur
+    static constexpr float GRAVITY       = 1200.0f; // Force de gravite
+    static constexpr float JUMP_FORCE    = -560.0f; // Force du saut (negative = vers le haut)
+    static constexpr float GROUND_Y      = 430.0f;  // Niveau du sol
+    static constexpr float NORMAL_HEIGHT = 60.0f;   // Hauteur normale
+    static constexpr float CROUCH_HEIGHT = 30.0f;   // Hauteur accroupi
 
-    PlayerState  m_state;
-    PlayerAction m_action;
+    PlayerAction m_action;      // Action courante
+    sf::Vector2f m_velocity;    // Vitesse (x, y)
+    bool         m_isOnGround;  // Vrai si le joueur est au sol
 
-    sf::Vector2f m_velocity;
-    bool         m_isOnGround;
-    float        m_invincibilityTimer;
+    // Formes visuelles du robot
+    sf::RectangleShape m_bodyShape;   // Corps
+    sf::RectangleShape m_helmetShape; // Casque
+    sf::CircleShape    m_visorShape;  // Visiere
 
-    // Visuels
-    sf::RectangleShape m_bodyShape;
-    sf::RectangleShape m_helmetShape;
-    sf::CircleShape    m_visorShape;
-    sf::Color          m_hurtFlashColor;
-    float              m_hurtFlashTimer;
-
+    // Methodes internes
     void applyGravity(float deltaTime);
-    void updateVisuals();
     void clampToGround();
+    void updateVisuals();
 };

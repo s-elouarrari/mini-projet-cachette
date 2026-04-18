@@ -2,15 +2,15 @@
 1776450446 source:c:\users\dell\documents\fssm\miniprojetcachette\src\entity.cpp
 	"Entity.hpp"
 
-1776450890 source:c:\users\dell\documents\fssm\miniprojetcachette\src\game.cpp
-	"Game.hpp"
-	"Utils.hpp"
+1776513655 source:c:\users\dell\documents\fssm\miniprojetcachette\src\game.cpp
+	"game.hpp"
+	"utils.hpp"
 	<cmath>
 	<algorithm>
 	<sstream>
 
-1776450890 source:c:\users\dell\documents\fssm\miniprojetcachette\src\main.cpp
-	"Game.hpp"
+1776513936 source:c:\users\dell\documents\fssm\miniprojetcachette\src\main.cpp
+	"game.hpp"
 
 1700319743 c:\msys64\ucrt64\include\sfml\graphics.hpp
 	<SFML/Window.hpp>
@@ -437,8 +437,8 @@
 	"Utils.hpp"
 	<cmath>
 
-1776450890 source:c:\users\dell\documents\fssm\miniprojetcachette\src\player.cpp
-	"Player.hpp"
+1776513936 source:c:\users\dell\documents\fssm\miniprojetcachette\src\player.cpp
+	"player.hpp"
 	"Utils.hpp"
 
 1775735172 c:\msys64\ucrt64\include\stdint.h
@@ -476,21 +476,21 @@
 1776450491 c:\users\dell\documents\fssm\miniprojetcachette\include\entity.hpp
 	<SFML/Graphics.hpp>
 
-1776450890 c:\users\dell\documents\fssm\miniprojetcachette\include\game.hpp
+1776513936 c:\users\dell\documents\fssm\miniprojetcachette\include\game.hpp
 	<SFML/Graphics.hpp>
 	<vector>
 	<memory>
-	"Player.hpp"
+	"player.hpp"
 	"Obstacle.hpp"
 	"Utils.hpp"
 
-1776450890 c:\users\dell\documents\fssm\miniprojetcachette\include\player.hpp
+1776513528 c:\users\dell\documents\fssm\miniprojetcachette\include\player.hpp
 	"Entity.hpp"
 
 1776450890 c:\users\dell\documents\fssm\miniprojetcachette\include\obstacle.hpp
 	"Entity.hpp"
 
-1776452676 c:\users\dell\documents\fssm\miniprojetcachette\include\utils.hpp
+1776513528 c:\users\dell\documents\fssm\miniprojetcachette\include\utils.hpp
 	<SFML/Graphics.hpp>
 	<string>
 

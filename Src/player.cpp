@@ -1,34 +1,40 @@
-#include "player.hpp"
-#include "Utils.hpp"
+#include "../include/Player.hpp"
+#include "../include/Utils.hpp"
 
 // ============================================================
-//  Player.cpp — Logique du robot joueur
+//  Player.cpp — Physique + sante du robot
 //
-//  Physique :
-//    - Gravite appliquee en continu quand le joueur est en l'air
-//    - Saut : on applique une force negative sur l'axe Y
-//    - Accroupissement : on reduit la hauteur de la hitbox
+//  SYSTEME DE SANTE :
+//    1. Le robot demarre avec MAX_HEALTH coeurs (3).
+//    2. Quand il touche un obstacle, takeDamage() est appele :
+//       - Si invincible : on ignore le choc
+//       - Sinon : on retire 1 coeur + on active l'invincibilite
+//    3. Pendant l'invincibilite, le robot clignote (alternance
+//       visible / invisible toutes les 0.1 secondes).
+//    4. Quand health == 0 : isDead() retourne true => Game Over.
 // ============================================================
 
 Player::Player(float startX, float startY)
     : Entity(startX, startY, 30.0f, NORMAL_HEIGHT),
       m_action(PlayerAction::IDLE),
       m_velocity(0.0f, 0.0f),
-      m_isOnGround(true)
+      m_isOnGround(true),
+      m_health(Constants::MAX_HEALTH),
+      m_invincibilityTimer(0.0f)
 {
-    // --- Corps du robot (rectangle gris metallique) ---
+    // Corps gris metallique
     m_bodyShape.setSize(sf::Vector2f(30.0f, 38.0f));
     m_bodyShape.setFillColor(sf::Color(180, 190, 210));
     m_bodyShape.setOutlineColor(sf::Color(100, 120, 160));
     m_bodyShape.setOutlineThickness(1.5f);
 
-    // --- Casque (rectangle plus clair) ---
+    // Casque
     m_helmetShape.setSize(sf::Vector2f(28.0f, 24.0f));
     m_helmetShape.setFillColor(sf::Color(200, 210, 230));
     m_helmetShape.setOutlineColor(sf::Color(100, 120, 160));
     m_helmetShape.setOutlineThickness(1.5f);
 
-    // --- Visiere (cercle cyan translucide) ---
+    // Visiere cyan
     m_visorShape.setRadius(9.0f);
     m_visorShape.setFillColor(sf::Color(0, 200, 255, 180));
     m_visorShape.setOutlineColor(sf::Color(0, 220, 255));
@@ -37,63 +43,68 @@ Player::Player(float startX, float startY)
     updateVisuals();
 }
 
-Player::~Player() {
-    // Pas de ressources dynamiques a liberer
-}
+Player::~Player() {}
 
 // ============================================================
-//  update() — Physique frame par frame
+//  update() — Physique + decompte invincibilite
 // ============================================================
-
 void Player::update(float deltaTime) {
-    // Applique la gravite si le joueur est en l'air
     applyGravity(deltaTime);
-
-    // Deplacement vertical
     m_position.y += m_velocity.y * deltaTime;
-
-    // On s'assure que le joueur ne passe pas sous le sol
     clampToGround();
 
-    // Mise a jour des positions des formes visuelles
+    // Decompte de l'invincibilite
+    if (m_invincibilityTimer > 0.0f) {
+        m_invincibilityTimer -= deltaTime;
+        if (m_invincibilityTimer < 0.0f)
+            m_invincibilityTimer = 0.0f;
+    }
+
     updateVisuals();
 }
 
 // ============================================================
-//  draw() — Affichage du robot
+//  draw() — Clignotement si invincible, rouge si blesse
 // ============================================================
-
 void Player::draw(sf::RenderWindow& window) {
+    // Clignotement : visible pendant les frames paires, cache pendant les impaires
+    if (m_invincibilityTimer > 0.0f) {
+        // On utilise le timer pour alterner toutes les 0.1s
+        int frame = static_cast<int>(m_invincibilityTimer * 10.0f);
+        if (frame % 2 == 0) return; // Frame cachee => on ne dessine rien
+    }
+
+    // Couleur selon la sante : orange si blesse (2 coeurs), rouge si critique (1 coeur)
+    if (m_health == 2) {
+        m_bodyShape.setFillColor(sf::Color(255, 180, 80));  // Orange : attention
+        m_helmetShape.setFillColor(sf::Color(255, 200, 100));
+    } else if (m_health == 1) {
+        m_bodyShape.setFillColor(sf::Color(220, 80, 80));   // Rouge : danger
+        m_helmetShape.setFillColor(sf::Color(240, 100, 100));
+    } else {
+        m_bodyShape.setFillColor(sf::Color(180, 190, 210)); // Gris : normal
+        m_helmetShape.setFillColor(sf::Color(200, 210, 230));
+    }
+
     window.draw(m_bodyShape);
     window.draw(m_helmetShape);
     window.draw(m_visorShape);
 }
 
-// ============================================================
-//  jump() — Saut lunaire (faible gravite)
-// ============================================================
-
 void Player::jump() {
-    // On ne peut sauter que si on est sur le sol
     if (m_isOnGround) {
-        m_velocity.y = JUMP_FORCE; // Force vers le haut (valeur negative)
+        m_velocity.y = JUMP_FORCE;
         m_isOnGround = false;
         m_action     = PlayerAction::JUMPING;
     }
 }
 
-// ============================================================
-//  crouch() — Accroupissement
-// ============================================================
-
 void Player::crouch(bool isCrouching) {
     if (isCrouching && m_isOnGround) {
-        // On reduit la hauteur de la hitbox
         m_size.y = CROUCH_HEIGHT;
         m_bodyShape.setSize(sf::Vector2f(30.0f, CROUCH_HEIGHT));
         m_action = PlayerAction::CROUCHING;
     } else {
-        // On remet la hauteur normale
         m_size.y = NORMAL_HEIGHT;
         m_bodyShape.setSize(sf::Vector2f(30.0f, NORMAL_HEIGHT));
         if (m_isOnGround) m_action = PlayerAction::IDLE;
@@ -101,45 +112,55 @@ void Player::crouch(bool isCrouching) {
     updateVisuals();
 }
 
+// ============================================================
+//  takeDamage() — Retire 1 coeur si le robot n'est pas invincible
+// ============================================================
+void Player::takeDamage() {
+    if (m_invincibilityTimer > 0.0f) return; // Grace : on ignore
+
+    m_health -= 1;
+
+    // Active l'invincibilite temporaire pour eviter les chocs en rafale
+    m_invincibilityTimer = Constants::INVINCIBILITY_AFTER_HIT;
+}
+
+bool Player::isInvincible() const {
+    return m_invincibilityTimer > 0.0f;
+}
+
+bool Player::isDead() const {
+    return m_health <= 0;
+}
+
+int Player::getHealth() const {
+    return m_health;
+}
+
 PlayerAction Player::getAction() const {
     return m_action;
 }
 
-// ============================================================
-//  Methodes privees : physique et visuels
-// ============================================================
-
 void Player::applyGravity(float deltaTime) {
-    // On applique la gravite seulement quand le joueur est en l'air
-    if (!m_isOnGround) {
+    if (!m_isOnGround)
         m_velocity.y += GRAVITY * deltaTime;
-    }
 }
 
 void Player::clampToGround() {
-    // Niveau du sol selon la hauteur actuelle du joueur
     float groundLevel = GROUND_Y - m_size.y;
-
     if (m_position.y >= groundLevel) {
-        m_position.y = groundLevel;  // On pose le joueur sur le sol
-        m_velocity.y = 0.0f;         // On annule la vitesse verticale
+        m_position.y = groundLevel;
+        m_velocity.y = 0.0f;
         m_isOnGround = true;
-
-        // Si on atterrit, on revient a l'etat IDLE
-        if (m_action == PlayerAction::JUMPING) {
+        if (m_action == PlayerAction::JUMPING)
             m_action = PlayerAction::IDLE;
-        }
     }
 }
 
 void Player::updateVisuals() {
-    // Corps : en bas de la zone du joueur
     m_bodyShape.setPosition(
         m_position.x,
         m_position.y + (m_size.y - m_bodyShape.getSize().y)
     );
-    // Casque : au-dessus du corps
     m_helmetShape.setPosition(m_position.x + 1.0f, m_position.y - 22.0f);
-    // Visiere : sur le casque
-    m_visorShape.setPosition(m_position.x + 5.0f, m_position.y - 20.0f);
+    m_visorShape.setPosition(m_position.x + 5.0f,  m_position.y - 20.0f);
 }

@@ -3,12 +3,15 @@
 
 // ============================================================
 //  Player.hpp — Le robot joueur
-//  Encapsulation : tous les attributs sont prives
+//
+//  NOUVEAU : systeme de sante (3 coeurs)
+//    - takeDamage() retire 1 coeur et active l'invincibilite
+//    - Pendant l'invincibilite, le robot clignote (visible / invisible)
+//    - A 0 coeurs : le robot est mort (Game Over)
 // ============================================================
 
-// Action actuelle du joueur (utile pour les animations)
 enum class PlayerAction {
-    IDLE,      // Marche normale
+    IDLE,      // Course normale
     JUMPING,   // En l'air
     CROUCHING  // Accroupi
 };
@@ -18,35 +21,41 @@ public:
     Player(float startX, float startY);
     ~Player() override;
 
-    // Methodes principales (surchargees depuis Entity)
     void update(float deltaTime) override;
     void draw(sf::RenderWindow& window) override;
 
-    // Actions du joueur
     void jump();
     void crouch(bool isCrouching);
 
-    // Accesseur
+    // --- Sante ---
+    void takeDamage();          // Retire 1 coeur (si pas invincible)
+    bool isInvincible() const;  // Vrai pendant la periode de grace
+    bool isDead()       const;  // Vrai quand health <= 0
+    int  getHealth()    const;
+
     PlayerAction getAction() const;
 
 private:
-    // Constantes physiques du joueur
-    static constexpr float GRAVITY       = 1200.0f; // Force de gravite
-    static constexpr float JUMP_FORCE    = -560.0f; // Force du saut (negative = vers le haut)
-    static constexpr float GROUND_Y      = 430.0f;  // Niveau du sol
-    static constexpr float NORMAL_HEIGHT = 60.0f;   // Hauteur normale
-    static constexpr float CROUCH_HEIGHT = 30.0f;   // Hauteur accroupi
+    // Constantes physiques
+    static constexpr float GRAVITY       = 1200.0f;
+    static constexpr float JUMP_FORCE    = -560.0f;
+    static constexpr float GROUND_Y      = 430.0f;
+    static constexpr float NORMAL_HEIGHT = 60.0f;
+    static constexpr float CROUCH_HEIGHT = 30.0f;
 
-    PlayerAction m_action;      // Action courante
-    sf::Vector2f m_velocity;    // Vitesse (x, y)
-    bool         m_isOnGround;  // Vrai si le joueur est au sol
+    PlayerAction m_action;
+    sf::Vector2f m_velocity;
+    bool         m_isOnGround;
 
-    // Formes visuelles du robot
-    sf::RectangleShape m_bodyShape;   // Corps
-    sf::RectangleShape m_helmetShape; // Casque
-    sf::CircleShape    m_visorShape;  // Visiere
+    // Sante
+    int   m_health;              // Nombre de coeurs restants
+    float m_invincibilityTimer;  // Compte a rebours d'invincibilite (secondes)
 
-    // Methodes internes
+    // Visuels
+    sf::RectangleShape m_bodyShape;
+    sf::RectangleShape m_helmetShape;
+    sf::CircleShape    m_visorShape;
+
     void applyGravity(float deltaTime);
     void clampToGround();
     void updateVisuals();

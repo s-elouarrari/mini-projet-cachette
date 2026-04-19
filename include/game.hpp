@@ -2,74 +2,85 @@
 #include <SFML/Graphics.hpp>
 #include <vector>
 #include <memory>
-#include "player.hpp"
+#include "Player.hpp"
 #include "Obstacle.hpp"
 #include "Utils.hpp"
 
 // ============================================================
-//  Game.hpp — Cœur du jeu
-//  Structure simplifiée, commentée pour niveau L2
+//  Game.hpp — Coeur du jeu
+//
+//  NOUVEAUTES :
+//    - Barre de temps EXPLOSION (en haut, rouge)
+//    - Barre de progression CAPSULE (en haut, verte)
+//    - Indicateur de sante (coeurs)
+//    - Difficulte progressive (vitesse + spawn)
+//    - Victoire figee avec message "Merci de m'avoir sauve !"
+//    - Etat EXPLOSION si la barre rouge atteint zero
 // ============================================================
 
-// Les différents états possibles du jeu
 enum class GameState {
-    MAIN_MENU,   // Écran d'accueil avec le bouton "Start"
-    PLAYING,     // Partie en cours
-    VICTORY,     // Le robot a atteint la capsule => WIN
-    GAME_OVER    // Collision avec un obstacle => GAME OVER
+    MAIN_MENU,  // Menu 3 boutons
+    ABOUT,      // Ecran histoire
+    PLAYING,    // Partie en cours
+    VICTORY,    // Robot dans la capsule => tout arrete
+    EXPLOSION,  // Temps ecoule => ecran rouge
+    GAME_OVER   // Sante a zero => Game Over classique
+};
+
+// Les 3 boutons du menu
+enum class MenuButton {
+    PLAY  = 0,
+    ABOUT = 1,
+    QUIT  = 2
 };
 
 class Game {
 public:
     Game();
     ~Game();
-
-    void run(); // Boucle principale : events => update => render
+    void run();
 
 private:
-    // -------------------------------------------------------
-    //  Fenetre, horloge et police
-    // -------------------------------------------------------
+    // --- Fenetre ---
     sf::RenderWindow m_window;
     sf::Clock        m_clock;
     sf::Font         m_font;
 
-    // -------------------------------------------------------
-    //  Etat du jeu
-    // -------------------------------------------------------
-    GameState m_state;
+    // --- Etat ---
+    GameState  m_state;
+    MenuButton m_selectedButton;
 
-    // Temps de survie accumule (0 -> SURVIVAL_TIME_FOR_CAPSULE)
-    // Quand il atteint 100%, la capsule apparait
-    float m_survivalTime;
+    // --- Chronometre d'explosion (compte a rebours) ---
+    float m_explosionTimer;    // Temps restant avant explosion (sec)
 
-    // Vitesse de defilement (augmente progressivement)
-    float m_scrollSpeed;
+    // --- Progression vers la capsule ---
+    float m_survivalTime;      // Temps accumule (0 -> SURVIVAL_TIME_FOR_CAPSULE)
 
-    // Timer pour l'apparition des obstacles
-    float m_spawnTimer;
-    float m_nextSpawnInterval;
+    // --- Difficulte progressive ---
+    float m_scrollSpeed;       // Vitesse actuelle des obstacles
+    float m_spawnInterval;     // Intervalle actuel entre deux spawns
+    float m_spawnTimer;        // Compteur depuis le dernier spawn
 
-    // Score final affiche sur l'ecran de victoire
-    float m_finalScore;
+    // --- Fin de partie ---
+    bool  m_gameWon;           // True = robot a touche la capsule
+    float m_finalScore;        // Score affiché a la victoire
 
-    // -------------------------------------------------------
-    //  Entites du jeu
-    // -------------------------------------------------------
+    // --- Tremblement d'ecran ---
+    bool         m_shakeActive;
+    float        m_shakeTimer;
+    sf::Vector2f m_shakeOffset;
+
+    // --- Entites ---
     std::unique_ptr<Player>                m_player;
     std::vector<std::unique_ptr<Obstacle>> m_obstacles;
 
-    // -------------------------------------------------------
-    //  Capsule de sauvetage
-    // -------------------------------------------------------
-    bool               m_capsuleVisible;  // Apparait quand la barre est a 100%
-    float              m_capsuleX;        // Position X (entre par la droite)
+    // --- Capsule ---
+    bool               m_capsuleVisible;
+    float              m_capsuleX;
     sf::RectangleShape m_capsule;
     sf::CircleShape    m_capsuleWindow;
 
-    // -------------------------------------------------------
-    //  Decor : etoiles (2 couches de parallaxe)
-    // -------------------------------------------------------
+    // --- Decor (inchange) ---
     struct StarLayer {
         std::vector<sf::CircleShape> stars;
         float speed;
@@ -83,25 +94,19 @@ private:
     };
     std::vector<PanelStrip> m_bgPanels;
 
-    // -------------------------------------------------------
-    //  Elements visuels : sol, plafond, HUD
-    // -------------------------------------------------------
+    // --- Visuels fixes ---
     sf::RectangleShape m_floorRect;
     sf::RectangleShape m_ceilingRect;
 
+    // Barre rouge : temps avant explosion (haut gauche)
+    sf::RectangleShape m_timerBarBg;
+    sf::RectangleShape m_timerBarFill;
+
+    // Barre verte : progression capsule (haut droite)
     sf::RectangleShape m_progressBarBg;
     sf::RectangleShape m_progressBarFill;
 
-    // -------------------------------------------------------
-    //  Tremblement d'ecran (screen shake)
-    // -------------------------------------------------------
-    bool         m_shakeActive;
-    float        m_shakeTimer;
-    sf::Vector2f m_shakeOffset;
-
-    // -------------------------------------------------------
-    //  Methodes privees
-    // -------------------------------------------------------
+    // --- Methodes ---
     void processEvents();
     void update(float deltaTime);
     void render();
@@ -116,9 +121,13 @@ private:
     void drawBackground();
     void drawHUD();
     void drawCapsule();
+    void drawRobotPreview(float cx, float cy, float scale);
     void drawMainMenu();
+    void drawAboutScreen();
     void drawVictoryScreen();
+    void drawExplosionScreen();
     void drawGameOverScreen();
+    void drawButton(const std::string& label, float y, bool selected);
 
     void     startGame();
     void     resetGame();

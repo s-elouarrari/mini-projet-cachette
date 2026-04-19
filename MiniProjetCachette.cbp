@@ -30,7 +30,7 @@
 		</Build>
 		<Compiler>
 			<Add option="-Wall" />
-			<Add directory="../../../../../msys64/ucrt64/include" />
+			<Add directory="C:/Users/DELL/Documents/fssm/MiniProjetCachette/include" />
 		</Compiler>
 		<Linker>
 			<Add library="sfml-graphics" />
@@ -41,6 +41,7 @@
 		<Unit filename="Src/Entity.cpp" />
 		<Unit filename="Src/Menu.cpp" />
 		<Unit filename="Src/Obstacle.cpp" />
+		<Unit filename="Src/Utils.cpp" />
 		<Unit filename="Src/game.cpp" />
 		<Unit filename="Src/main.cpp" />
 		<Unit filename="Src/player.cpp" />

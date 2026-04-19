@@ -3,49 +3,53 @@
 #include <string>
 
 // ============================================================
-//  Utils.hpp — Constantes globales + fonctions utilitaires
+//  Utils.hpp — Constantes et fonctions utilitaires
+//  Toutes les valeurs "magiques" sont ici, pas dans le code
 // ============================================================
 
 namespace Constants {
-    // Fenêtre
-    constexpr unsigned int WINDOW_WIDTH    = 900;
-    constexpr unsigned int WINDOW_HEIGHT   = 600;
-    constexpr unsigned int TARGET_FPS      = 60;
-    constexpr const char*  WINDOW_TITLE    = "Station Evac: Hull Breach";
+    // --- Fenetre ---
+    constexpr unsigned int WINDOW_WIDTH  = 900;
+    constexpr unsigned int WINDOW_HEIGHT = 600;
+    constexpr unsigned int TARGET_FPS    = 60;
+    constexpr const char*  WINDOW_TITLE  = "Station Evac: Hull Breach";
 
-    // Gameplay
-    constexpr float PRESSURE_MAX               = 30.0f;  // secondes d'oxygène
-    constexpr float SURVIVAL_TIME_FOR_CAPSULE  = 20.0f;  // secondes de survie pour remplir la barre à 100%
-    constexpr float OBSTACLE_SPAWN_INTERVAL_MIN = 1.2f;
-    constexpr float OBSTACLE_SPAWN_INTERVAL_MAX = 2.8f;
-    constexpr float SCROLL_SPEED_BASE          = 300.0f;
-    constexpr float SCROLL_SPEED_MAX           = 550.0f;
-    constexpr float SPEED_INCREMENT            = 10.0f;
+    // --- Positions du monde ---
+    constexpr float GROUND_Y        = 490.0f;  // Y du sol
+    constexpr float PLAYER_START_X  = 120.0f;
+    constexpr float PLAYER_START_Y  = 430.0f;
 
-    // Positions sol
-    constexpr float GROUND_Y              = 490.0f;
-    constexpr float PLAYER_START_X        = 120.0f;
-    constexpr float PLAYER_START_Y        = 430.0f;
+    // --- Sante du joueur ---
+    constexpr int   MAX_HEALTH           = 3;     // Coeurs au depart
+    constexpr float INVINCIBILITY_AFTER_HIT = 1.5f; // Secondes d'invincibilite apres un choc
 
-    // Obstacles aériens
-    constexpr float AERIAL_OBSTACLE_Y     = 310.0f;
+    // --- Temps avant explosion ---
+    constexpr float EXPLOSION_TIME       = 35.0f; // Secondes avant la fin (barre rouge en haut)
 
-    // Couleurs thème spatial
-    const sf::Color COLOR_BACKGROUND      = sf::Color(8,  12, 28);
-    const sf::Color COLOR_FLOOR           = sf::Color(30, 40, 70);
-    const sf::Color COLOR_ACCENT_CYAN     = sf::Color(0,  220, 255);
-    const sf::Color COLOR_ACCENT_ORANGE   = sf::Color(255, 140, 0);
-    const sf::Color COLOR_ACCENT_RED      = sf::Color(220, 40,  40);
-    const sf::Color COLOR_ACCENT_GREEN    = sf::Color(40,  220, 100);
-    const sf::Color COLOR_HUD_TEXT        = sf::Color(200, 220, 255);
-    const sf::Color COLOR_PRESSURE_LOW    = sf::Color(255, 60,  60);
-    const sf::Color COLOR_PRESSURE_HIGH   = sf::Color(0,   200, 255);
+    // --- Progression vers la capsule ---
+    constexpr float SURVIVAL_TIME_FOR_CAPSULE = 20.0f; // Secondes pour remplir la barre verte
+
+    // --- Obstacles : vitesse et spawn ---
+    constexpr float SCROLL_SPEED_BASE   = 280.0f; // Vitesse initiale des obstacles
+    constexpr float SCROLL_SPEED_MAX    = 600.0f; // Vitesse maximale
+    constexpr float SPEED_INCREMENT     = 12.0f;  // Acceleration par seconde
+
+    constexpr float SPAWN_INTERVAL_START = 2.5f;  // Intervalle initial entre obstacles (s)
+    constexpr float SPAWN_INTERVAL_MIN   = 0.8f;  // Intervalle minimum (difficulte max)
+    constexpr float SPAWN_REDUCTION      = 0.04f; // Reduction de l'intervalle par seconde
+
+    // --- Couleurs du theme spatial ---
+    const sf::Color COLOR_BACKGROUND  = sf::Color(8,   12,  28);
+    const sf::Color COLOR_ACCENT_CYAN = sf::Color(0,  220, 255);
+    const sf::Color COLOR_ACCENT_ORANGE= sf::Color(255, 140,  0);
+    const sf::Color COLOR_ACCENT_RED  = sf::Color(220,  40,  40);
+    const sf::Color COLOR_ACCENT_GREEN= sf::Color(40,  220, 100);
+    const sf::Color COLOR_HUD_TEXT    = sf::Color(200, 220, 255);
 }
 
-// Fonctions utilitaires (friend-like helpers)
 namespace Utils {
-    float randomFloat(float minVal, float maxVal);
-    int   randomInt(int minVal, int maxVal);
+    float     randomFloat(float minVal, float maxVal);
+    int       randomInt(int minVal, int maxVal);
     sf::Color lerpColor(const sf::Color& a, const sf::Color& b, float t);
     std::string formatTime(float seconds);
 }

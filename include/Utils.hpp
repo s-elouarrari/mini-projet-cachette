@@ -3,72 +3,90 @@
 #include <string>
 
 // ============================================================
-//  Utils.hpp — Toutes les constantes du jeu
-//  Modifier ici pour ajuster le gameplay sans chercher dans
-//  tout le code.
+//  Utils.hpp — Constantes de configuration et fonctions utilitaires
+//
+//  ORGANISATION :
+//    namespace Constants → toutes les valeurs "magiques" du jeu.
+//      Modifier ici pour régler le gameplay sans chercher dans
+//      tout le code source.
+//
+//    namespace Utils → fonctions helpers utilisées partout.
+//
+//  HITBOX DU JOUEUR (résumé pratique) :
+//    GROUND_Y     = 490
+//    NORMAL_HEIGHT= 80   → debout   : Y 410..490
+//    CROUCH_HEIGHT= 35   → accroupi : Y 455..490
+//    JUMP_FORCE   = -560 → apex saut: Y ~268..348
+//
+//    Bloc sol    Y 390..490 → debout TOUCHE, saut PASSE
+//    Drone aérien Y 350..445 → debout TOUCHE, accroupi PASSE
 // ============================================================
 
 namespace Constants {
-    // --- Fenetre ---
-    constexpr unsigned int WINDOW_WIDTH  = 900;
-    constexpr unsigned int WINDOW_HEIGHT = 600;
-    constexpr unsigned int TARGET_FPS    = 60;
+
+    // ── Fenêtre ───────────────────────────────────────────────
+    constexpr unsigned int WINDOW_WIDTH  = 900;   // largeur en pixels
+    constexpr unsigned int WINDOW_HEIGHT = 600;   // hauteur en pixels
+    constexpr unsigned int TARGET_FPS    = 60;    // images par seconde cible
     constexpr const char*  WINDOW_TITLE  = "Station Evac: Hull Breach";
 
-    // ─────────────────────────────────────────────────────────
-    //  POSITIONS DU MONDE
-    // ─────────────────────────────────────────────────────────
-    // GROUND_Y = Y du sol visible (bord superieur du sol)
-    constexpr float GROUND_Y        = 490.0f;
+    // ── Positions du monde ────────────────────────────────────
+    // GROUND_Y : Y du bord supérieur du sol (le rectangle du sol
+    // commence ici et s'étend vers le bas).
+    constexpr float GROUND_Y       = 490.0f;
 
-    // Position de depart du robot = GROUND_Y - NORMAL_HEIGHT
-    //   490 - 60 = 430  (robot pose sur le sol)
-    constexpr float PLAYER_START_X  = 120.0f;
-    constexpr float PLAYER_START_Y  = 410.0f;  // = GROUND_Y - NORMAL_HEIGHT = 490-80
+    // Position de départ du robot :
+    //   X = fixe (côté gauche de l'écran)
+    //   Y = GROUND_Y - NORMAL_HEIGHT = 490 - 80 = 410
+    //     (sommet de la hitbox quand le robot est debout)
+    constexpr float PLAYER_START_X = 120.0f;
+    constexpr float PLAYER_START_Y = 410.0f;
 
-    // ─────────────────────────────────────────────────────────
-    //  SANTE
-    // ─────────────────────────────────────────────────────────
-    constexpr int   MAX_HEALTH             = 3;
-    constexpr float INVINCIBILITY_AFTER_HIT = 1.8f; // secondes
+    // ── Santé ─────────────────────────────────────────────────
+    constexpr int   MAX_HEALTH             = 3;     // cœurs au départ
+    constexpr float INVINCIBILITY_AFTER_HIT = 1.8f; // secondes d'invincibilité
 
-    // ─────────────────────────────────────────────────────────
-    //  DUREE DU JEU
-    //  EXPLOSION_TIME     : temps avant la destruction de la station
-    //  SURVIVAL_TIME_FOR_CAPSULE : temps de survie pour faire
-    //                       apparaitre la capsule (doit etre
-    //                       inferieur a EXPLOSION_TIME !)
-    // ─────────────────────────────────────────────────────────
-    constexpr float EXPLOSION_TIME             = 90.0f;  // 90 secondes
-    constexpr float SURVIVAL_TIME_FOR_CAPSULE  = 60.0f;  // 60 secondes
+    // ── Durées du jeu ─────────────────────────────────────────
+    // EXPLOSION_TIME doit être > SURVIVAL_TIME_FOR_CAPSULE
+    // pour que le joueur ait le temps d'atteindre la capsule.
+    constexpr float EXPLOSION_TIME            = 90.0f;  // sec avant explosion
+    constexpr float SURVIVAL_TIME_FOR_CAPSULE = 60.0f;  // sec pour la capsule
 
-    // ─────────────────────────────────────────────────────────
-    //  DIFFICULTE : VITESSE ET SPAWN
-    // ─────────────────────────────────────────────────────────
-    // Vitesse initiale douce pour laisser le joueur decouvrir
-    constexpr float SCROLL_SPEED_BASE    = 200.0f;
-    constexpr float SCROLL_SPEED_MAX     = 520.0f;
-    constexpr float SPEED_INCREMENT      = 6.0f;   // px/s par seconde
+    // ── Obstacles : vitesse et fréquence d'apparition ────────
+    constexpr float SCROLL_SPEED_BASE    = 200.0f; // vitesse initiale (px/s)
+    constexpr float SCROLL_SPEED_MAX     = 520.0f; // vitesse maximale (px/s)
+    constexpr float SPEED_INCREMENT      = 6.0f;   // accélération (px/s par sec)
 
-    // Spawn : large au debut, serre a la fin
+    // Intervalle entre deux obstacles (secondes) :
+    //   Commence à START, décroît jusqu'à MIN au fil du temps.
     constexpr float SPAWN_INTERVAL_START = 3.2f;
     constexpr float SPAWN_INTERVAL_MIN   = 1.0f;
-    constexpr float SPAWN_REDUCTION      = 0.025f; // reduction/seconde
+    constexpr float SPAWN_REDUCTION      = 0.025f; // réduction par seconde
 
-    // ─────────────────────────────────────────────────────────
-    //  COULEURS
-    // ─────────────────────────────────────────────────────────
-    const sf::Color COLOR_BACKGROUND    = sf::Color(8,   12,  28);
-    const sf::Color COLOR_ACCENT_CYAN   = sf::Color(0,  220, 255);
-    const sf::Color COLOR_ACCENT_ORANGE = sf::Color(255, 140,   0);
-    const sf::Color COLOR_ACCENT_RED    = sf::Color(220,  40,  40);
-    const sf::Color COLOR_ACCENT_GREEN  = sf::Color(40,  220, 100);
-    const sf::Color COLOR_HUD_TEXT      = sf::Color(200, 220, 255);
-}
+    // ── Couleurs du thème spatial ─────────────────────────────
+    const sf::Color COLOR_BACKGROUND    = sf::Color(8,   12,  28);  // bleu nuit très sombre
+    const sf::Color COLOR_ACCENT_CYAN   = sf::Color(0,  220, 255);  // cyan lumineux
+    const sf::Color COLOR_ACCENT_ORANGE = sf::Color(255, 140,   0); // orange chaud
+    const sf::Color COLOR_ACCENT_RED    = sf::Color(220,  40,  40); // rouge danger
+    const sf::Color COLOR_ACCENT_GREEN  = sf::Color(40,  220, 100); // vert victoire
+    const sf::Color COLOR_HUD_TEXT      = sf::Color(200, 220, 255); // blanc bleuté
+
+} // namespace Constants
+
 
 namespace Utils {
-    float       randomFloat(float minVal, float maxVal);
-    int         randomInt(int minVal, int maxVal);
-    sf::Color   lerpColor(const sf::Color& a, const sf::Color& b, float t);
+
+    // Nombre flottant aléatoire dans [minVal, maxVal]
+    float randomFloat(float minVal, float maxVal);
+
+    // Entier aléatoire dans [minVal, maxVal] (bornes incluses)
+    int randomInt(int minVal, int maxVal);
+
+    // Interpolation linéaire entre deux couleurs SFML
+    // t = 0.0 → couleur a, t = 1.0 → couleur b
+    sf::Color lerpColor(const sf::Color& a, const sf::Color& b, float t);
+
+    // Formate des secondes en chaîne "SS.ccs" (ex: "23.45s")
     std::string formatTime(float seconds);
-}
+
+} // namespace Utils

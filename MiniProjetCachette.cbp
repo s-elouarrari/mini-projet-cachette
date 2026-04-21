@@ -33,6 +33,7 @@
 			<Add directory="C:/Users/DELL/Documents/fssm/MiniProjetCachette/include" />
 		</Compiler>
 		<Linker>
+			<Add library="sfml-audio" />
 			<Add library="sfml-graphics" />
 			<Add library="sfml-window" />
 			<Add library="sfml-system" />

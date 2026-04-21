@@ -1,5 +1,6 @@
 #pragma once
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 #include <vector>
 #include <memory>
 #include "Player.hpp"
@@ -7,27 +8,29 @@
 #include "Utils.hpp"
 
 // ============================================================
-//  Game.hpp � Coeur du jeu
+//  Game.hpp — Coeur du jeu Station Evac
 //
-//  NOUVEAUTES :
-//    - Barre de temps EXPLOSION (en haut, rouge)
-//    - Barre de progression CAPSULE (en haut, verte)
-//    - Indicateur de sante (coeurs)
-//    - Difficulte progressive (vitesse + spawn)
-//    - Victoire figee avec message "Merci de m'avoir sauve !"
-//    - Etat EXPLOSION si la barre rouge atteint zero
+//  ETATS DU JEU :
+//    MAIN_MENU → ABOUT  (retour au menu)
+//    MAIN_MENU → READY  (JOUER clique : robot a l'arret, attend ESPACE)
+//    READY     → PLAYING (joueur appuie sur ESPACE)
+//    PLAYING   → VICTORY / GAME_OVER / EXPLOSION
+//
+//  AUDIO : SFML Audio (sf::SoundBuffer + sf::Sound + sf::Music)
+//    Fichiers attendus dans assets/ :
+//      jump.wav, duck.wav, hit.wav, win.wav, music.ogg
 // ============================================================
 
 enum class GameState {
-    MAIN_MENU,  // Menu 3 boutons
-    ABOUT,      // Ecran histoire
-    PLAYING,    // Partie en cours
-    VICTORY,    // Robot dans la capsule => tout arrete
-    EXPLOSION,  // Temps ecoule => ecran rouge
-    GAME_OVER   // Sante a zero => Game Over classique
+    MAIN_MENU,
+    ABOUT,
+    READY,      // Robot a l'arret sur la piste, attend ESPACE
+    PLAYING,
+    VICTORY,
+    EXPLOSION,
+    GAME_OVER
 };
 
-// Les 3 boutons du menu
 enum class MenuButton {
     PLAY  = 0,
     ABOUT = 1,
@@ -41,52 +44,48 @@ public:
     void run();
 
 private:
-    // --- Fenetre ---
+    // ── Fenetre ───────────────────────────────────────────────
     sf::RenderWindow m_window;
     sf::Clock        m_clock;
     sf::Font         m_font;
 
-    // --- Etat ---
+    // ── Etat ──────────────────────────────────────────────────
     GameState  m_state;
     MenuButton m_selectedButton;
 
-    // --- Chronometre d'explosion (compte a rebours) ---
-    float m_explosionTimer;    // Temps restant avant explosion (sec)
+    // ── Gameplay ──────────────────────────────────────────────
+    float m_explosionTimer;
+    float m_survivalTime;
+    float m_scrollSpeed;
+    float m_spawnInterval;
+    float m_spawnTimer;
+    bool  m_gameWon;
+    float m_finalScore;
 
-    // --- Progression vers la capsule ---
-    float m_survivalTime;      // Temps accumule (0 -> SURVIVAL_TIME_FOR_CAPSULE)
-
-    // --- Difficulte progressive ---
-    float m_scrollSpeed;       // Vitesse actuelle des obstacles
-    float m_spawnInterval;     // Intervalle actuel entre deux spawns
-    float m_spawnTimer;        // Compteur depuis le dernier spawn
-
-    // --- Fin de partie ---
-    bool  m_gameWon;           // True = robot a touche la capsule
-    float m_finalScore;        // Score affich� a la victoire
-
-    // --- Tremblement d'ecran ---
+    // ── Screen shake ──────────────────────────────────────────
     bool         m_shakeActive;
     float        m_shakeTimer;
     sf::Vector2f m_shakeOffset;
 
-    // --- Entites ---
+    // ── Entites ───────────────────────────────────────────────
     std::unique_ptr<Player>                m_player;
     std::vector<std::unique_ptr<Obstacle>> m_obstacles;
 
-    // --- Capsule ---
+    // ── Capsule ───────────────────────────────────────────────
     bool               m_capsuleVisible;
     float              m_capsuleX;
     sf::RectangleShape m_capsule;
     sf::CircleShape    m_capsuleWindow;
+    float              m_capsuleGlowTimer; // timer local pour la capsule
 
-    // --- Decor (inchange) ---
+    // ── Decor : etoiles (2 couches) ───────────────────────────
     struct StarLayer {
         std::vector<sf::CircleShape> stars;
         float speed;
     };
     StarLayer m_starLayers[2];
 
+    // ── Decor : panneaux metalliques ──────────────────────────
     struct PanelStrip {
         sf::RectangleShape rect;
         sf::Color          color;
@@ -94,44 +93,73 @@ private:
     };
     std::vector<PanelStrip> m_bgPanels;
 
-    // --- Visuels fixes ---
+    // ── Decor : lune (parallaxe lente) ────────────────────────
+    struct Crater {
+        sf::Vector2f offset;  // position relative au centre de la lune
+        float        radius;
+    };
+    sf::CircleShape      m_moon;
+    std::vector<Crater>  m_moonCraters;
+    float                m_moonX;
+    float                m_moonY;
+
+    // ── Visuels fixes ─────────────────────────────────────────
     sf::RectangleShape m_floorRect;
     sf::RectangleShape m_ceilingRect;
-
-    // Barre rouge : temps avant explosion (haut gauche)
     sf::RectangleShape m_timerBarBg;
     sf::RectangleShape m_timerBarFill;
-
-    // Barre verte : progression capsule (haut droite)
     sf::RectangleShape m_progressBarBg;
     sf::RectangleShape m_progressBarFill;
 
-    // --- Methodes ---
+    // ── Audio ─────────────────────────────────────────────────
+    // SoundBuffers : stockent les donnees audio en RAM
+    sf::SoundBuffer m_bufJump;
+    sf::SoundBuffer m_bufDuck;
+    sf::SoundBuffer m_bufHit;
+    sf::SoundBuffer m_bufWin;
+
+    // Sounds : jouent un buffer (on peut en jouer plusieurs en meme temps)
+    sf::Sound m_sndJump;
+    sf::Sound m_sndDuck;
+    sf::Sound m_sndHit;
+    sf::Sound m_sndWin;
+
+    // Music : streame depuis le disque (plus efficace pour les longs morceaux)
+    sf::Music m_music;
+
+    bool m_audioLoaded;  // true si au moins les fichiers sont trouves
+
+    // ── Methodes ──────────────────────────────────────────────
     void processEvents();
     void update(float deltaTime);
     void render();
 
     void updatePlaying(float deltaTime);
+    void updateParallax(float deltaTime);
+    void updateMoon(float deltaTime);
+    void updateShake(float deltaTime);
     void checkCollisions();
     void spawnObstacle();
     void cleanObstacles();
-    void updateParallax(float deltaTime);
-    void updateShake(float deltaTime);
 
-    void drawBackground();
+    void drawBackground();    // etoiles + panneaux + lune
+    void drawMoon();
     void drawHUD();
     void drawCapsule();
-    void drawRobotPreview(float cx, float cy, float scale);
+    void drawReadyScreen();
     void drawMainMenu();
     void drawAboutScreen();
     void drawVictoryScreen();
     void drawExplosionScreen();
     void drawGameOverScreen();
     void drawButton(const std::string& label, float y, bool selected);
+    void drawRobotPreview(float cx, float cy, float scale);
 
-    void     startGame();
-    void     resetGame();
-    void     triggerScreenShake(float duration);
+    void startGame();
+    void resetGame();
+    void triggerScreenShake(float duration);
+    void loadAudio();
+
     bool     loadFont();
     sf::Text makeText(const std::string& str, unsigned int size, sf::Color color);
 };

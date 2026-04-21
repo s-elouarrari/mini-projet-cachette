@@ -2,18 +2,22 @@
 #include "Entity.hpp"
 
 // ============================================================
-//  Player.hpp � Le robot joueur
+//  Player.hpp — Le robot joueur
 //
-//  NOUVEAU : systeme de sante (3 coeurs)
-//    - takeDamage() retire 1 coeur et active l'invincibilite
-//    - Pendant l'invincibilite, le robot clignote (visible / invisible)
-//    - A 0 coeurs : le robot est mort (Game Over)
+//  HITBOX DE REFERENCE (calculees, pas au hasard)
+//  GROUND_Y     = 490
+//  NORMAL_HEIGHT= 80    → debout   : Y 410..490
+//  CROUCH_HEIGHT= 35    → accroupi : Y 455..490
+//  JUMP_FORCE   = -560  → apex     : Y ~268..348
+//
+//  Drone aerien : Y 350..445  → debout touche, accroupi passe
+//  Bloc sol     : Y 390..490  → debout ET accroupi touchent → SAUTER
 // ============================================================
 
 enum class PlayerAction {
-    IDLE,      // Course normale
-    JUMPING,   // En l'air
-    CROUCHING  // Accroupi
+    IDLE,
+    JUMPING,
+    CROUCHING
 };
 
 class Player : public Entity {
@@ -27,31 +31,27 @@ public:
     void jump();
     void crouch(bool isCrouching);
 
-    // --- Sante ---
-    void takeDamage();          // Retire 1 coeur (si pas invincible)
-    bool isInvincible() const;  // Vrai pendant la periode de grace
-    bool isDead()       const;  // Vrai quand health <= 0
+    void takeDamage();
+    bool isInvincible() const;
+    bool isDead()       const;
     int  getHealth()    const;
 
     PlayerAction getAction() const;
 
 private:
-    // Constantes physiques
-    static constexpr float GRAVITY       = 1200.0f;
-    static constexpr float JUMP_FORCE    = -560.0f;
-    static constexpr float GROUND_Y      = 430.0f;
-    static constexpr float NORMAL_HEIGHT = 60.0f;
-    static constexpr float CROUCH_HEIGHT = 30.0f;
+    static constexpr float GRAVITY       = 1100.0f;
+    static constexpr float JUMP_FORCE    = -560.0f;  // plus fort pour sauter le bloc sol
+    static constexpr float GROUND_Y      = 490.0f;
+    static constexpr float NORMAL_HEIGHT = 80.0f;    // hauteur totale debout
+    static constexpr float CROUCH_HEIGHT = 35.0f;    // hauteur accroupi (moins de moitie)
 
     PlayerAction m_action;
     sf::Vector2f m_velocity;
     bool         m_isOnGround;
 
-    // Sante
-    int   m_health;              // Nombre de coeurs restants
-    float m_invincibilityTimer;  // Compte a rebours d'invincibilite (secondes)
+    int   m_health;
+    float m_invincibilityTimer;
 
-    // Visuels
     sf::RectangleShape m_bodyShape;
     sf::RectangleShape m_helmetShape;
     sf::CircleShape    m_visorShape;

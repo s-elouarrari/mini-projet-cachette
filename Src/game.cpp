@@ -4,10 +4,10 @@
 #include <algorithm>
 
 // ============================================================
-//  Game.cpp — Station Evac : Hull Breach
+//  Game.cpp â€” Station Evac : Hull Breach
 //
 //  REGLES DU JEU :
-//  1. Une barre ROUGE compte le temps avant l'explosion (35s).
+//  1. Une barre ROUGE compte le temps avant l'explosion (90s).
 //     Si elle atteint zero : ecran d'explosion, mission echouee.
 //  2. Une barre VERTE compte la progression vers la capsule (20s).
 //     A 100% : la capsule apparait, il faut la toucher.
@@ -78,7 +78,7 @@ Game::Game()
     m_progressBarFill.setFillColor(Constants::COLOR_ACCENT_GREEN);
 
     // --- Capsule ---
-    m_capsule.setSize(sf::Vector2f(90.0f, 55.0f));
+    m_capsule.setSize(sf::Vector2f(110.0f, 80.0f)); // grande capsule futuriste
     m_capsule.setFillColor(sf::Color(40, 55, 85));
     m_capsule.setOutlineColor(Constants::COLOR_ACCENT_GREEN);
     m_capsule.setOutlineThickness(3.0f);
@@ -153,7 +153,7 @@ void Game::run() {
 }
 
 // ============================================================
-//  processEvents() — Clavier
+//  processEvents() â€” Clavier
 // ============================================================
 void Game::processEvents() {
     sf::Event event;
@@ -226,7 +226,7 @@ void Game::update(float deltaTime) {
 }
 
 // ============================================================
-//  updatePlaying() — Toute la logique de jeu
+//  updatePlaying() â€” Toute la logique de jeu
 // ============================================================
 void Game::updatePlaying(float deltaTime) {
 
@@ -320,53 +320,78 @@ void Game::updatePlaying(float deltaTime) {
 
     // -------------------------------------------------------
     //  10. CAPSULE DE SAUVETAGE
-    //      Elle entre par la droite, avance lentement.
-    //      Contact => VICTOIRE, tout s'arrete.
+    //
+    //  La capsule entre par la droite et avance vers le robot.
+    //  capsuleY = GROUND_Y - 60 = 490 - 60 = 430
+    //  => Meme niveau que le robot debout (Y=430..490)
+    //  => Le robot la touche naturellement en courant
+    //
+    //  Contact => m_gameWon=true => tout s'arrete immediatement
+    //  Message : "Merci de m'avoir sauve !"
     // -------------------------------------------------------
     if (m_capsuleVisible) {
-        m_capsuleX -= (m_scrollSpeed * 0.4f) * deltaTime;
+        m_capsuleX -= (m_scrollSpeed * 0.40f) * deltaTime;
 
-        float capsuleY = Constants::GROUND_Y - 62.0f;
+        // Capsule posee sur le sol (meme niveau que le robot)
+        const float capsuleW = 110.0f;  // largeur de la grande capsule
+        const float capsuleH = 80.0f;   // hauteur â†’ capsuleY = 490-80 = 410 = niveau robot
+        float capsuleY = Constants::GROUND_Y - capsuleH;  // 490 - 80 = 410
+
         m_capsule.setPosition(m_capsuleX, capsuleY);
-        m_capsuleWindow.setPosition(m_capsuleX + 22.0f, capsuleY + 27.0f);
+        m_capsuleWindow.setPosition(m_capsuleX + 55.0f, capsuleY + 35.0f);
 
-        sf::FloatRect capsuleBounds(m_capsuleX, capsuleY, 90.0f, 55.0f);
-        sf::FloatRect playerBounds = m_player->getBounds();
+        // Detection de contact FloatRect
+        sf::FloatRect capsuleBounds(m_capsuleX, capsuleY, capsuleW, capsuleH);
+        sf::FloatRect playerBounds  = m_player->getBounds();
 
         if (playerBounds.intersects(capsuleBounds)) {
-            // VICTOIRE : on fige tout
+            // VICTOIRE : tout s'arrete, message affichÃ©
             m_gameWon    = true;
             m_finalScore = m_survivalTime;
             m_state      = GameState::VICTORY;
-            m_obstacles.clear(); // On efface les obstacles => ecran propre
+            m_obstacles.clear();
         }
     }
 }
 
 // ============================================================
-//  checkCollisions() — FloatRect + invincibilite
-//  Un seul choc = 1 coeur perdu (pas mort immediate)
+//  checkCollisions() â€” Detection de collision avec FloatRect
+//
+//  PRINCIPE :
+//    On recupere la hitbox du robot (getBounds), on reduit
+//    legerement les bords GAUCHE et DROIT (tolerance de 4px)
+//    pour ne pas punir les tout petits frÃ´lements visuels.
+//
+//    On ne touche PAS au haut et au bas de la hitbox :
+//    les obstacles ont ete calibres en consequence dans
+//    Obstacle.cpp pour que le saut et l'accroupissement
+//    fonctionnent exactement comme prevu.
+//
+//    Un contact = 1 coeur perdu + invincibilite temporaire.
+//    Apres 3 chocs = Game Over.
 // ============================================================
 void Game::checkCollisions() {
-    // Hitbox du joueur (legerement reduite pour etre plus fair)
+    // Hitbox du robot : exactement getBounds() avec tolerance laterale
     sf::FloatRect player = m_player->getBounds();
-    player.left   += 5.0f;
-    player.top    += 5.0f;
-    player.width  -= 10.0f;
-    player.height -= 10.0f;
+    player.left  += 4.0f;  // tolerance bord gauche
+    player.width -= 8.0f;  // tolerance bord droit (4px de chaque cote)
+    // Note : on ne touche PAS top/height pour garder la calibration
+    //        verticale des obstacles (sol et aerien)
 
     for (auto& obs : m_obstacles) {
         sf::FloatRect obstacle = obs->getBounds();
+
+        // .intersects() retourne true si les deux rectangles se chevauchent
         if (player.intersects(obstacle)) {
-            m_player->takeDamage();        // Retire 1 coeur (si pas invincible)
-            triggerScreenShake(0.25f);     // Petit tremblement
-            break; // Un seul choc par frame
+            m_player->takeDamage();   // -1 coeur (ignore si invincible)
+            triggerScreenShake(0.35f);
+            break; // un seul choc traite par frame
         }
     }
 }
 
 // ============================================================
-//  spawnObstacle() — 2 types, choix aleatoire
+//  spawnObstacle() â€” 2 types, choix aleatoire
 // ============================================================
 void Game::spawnObstacle() {
     float spawnX = static_cast<float>(Constants::WINDOW_WIDTH) + 50.0f;
@@ -388,7 +413,7 @@ void Game::cleanObstacles() {
 }
 
 // ============================================================
-//  updateParallax() — Inchange
+//  updateParallax() â€” Inchange
 // ============================================================
 void Game::updateParallax(float deltaTime) {
     for (int layer = 0; layer < 2; ++layer) {
@@ -494,7 +519,7 @@ void Game::drawBackground() {
 }
 
 // ============================================================
-//  drawHUD() — 2 barres + coeurs
+//  drawHUD() â€” 2 barres + coeurs
 // ============================================================
 void Game::drawHUD() {
 
@@ -549,60 +574,202 @@ void Game::drawHUD() {
     );
     m_window.draw(capText);
 
-    // ---- Coeurs (sante) — au centre en haut ----
+    // ----------------------------------------------------------------
+    //  COEURS (sante) â€” centre en haut, grandes et lisibles
+    //
+    //  Chaque coeur est dessine avec 5 rectangles/cercles :
+    //    - 2 cercles superieurs (les deux bosses du coeur)
+    //    - 1 triangle inferieur (la pointe)
+    //  Un coeur perdu devient gris fonce (vide).
+    //  Espacement : 46px entre chaque icone (bien espace).
+    // ----------------------------------------------------------------
     int health = m_player->getHealth();
-    float heartStartX = Constants::WINDOW_WIDTH / 2.0f - (Constants::MAX_HEALTH * 22.0f) / 2.0f;
+
+    // Largeur totale des 3 coeurs = 3 * 36px + 2 * 10px de gap = 128px
+    // On centre sur WINDOW_WIDTH/2
+    const float heartW    = 36.0f;  // largeur d'un coeur
+    const float heartGap  = 10.0f;  // espace entre deux coeurs
+    const float heartTotalW = Constants::MAX_HEALTH * heartW + (Constants::MAX_HEALTH - 1) * heartGap;
+    float hStartX = Constants::WINDOW_WIDTH / 2.0f - heartTotalW / 2.0f;
+    float hY      = 7.0f;  // Y du haut des coeurs
 
     for (int i = 0; i < Constants::MAX_HEALTH; ++i) {
-        // Coeur plein ou vide selon la sante restante
         bool full = (i < health);
-        sf::Color heartColor = full ? sf::Color(220, 60, 80) : sf::Color(60, 30, 40);
 
-        // On dessine un coeur simplifie avec 2 cercles + 1 triangle (carreau de cartes)
-        // Pour rester simple (niveau L2) : on utilise 3 rectangles pour simuler un coeur
-        float hx = heartStartX + i * 26.0f;
-        float hy = 10.0f;
+        // Couleur : rouge vif si plein, gris fonce si vide
+        sf::Color cFill    = full ? sf::Color(230, 50,  70)  : sf::Color(55, 30, 40);
+        sf::Color cOutline = full ? sf::Color(255, 100, 120) : sf::Color(80, 50, 60);
 
-        sf::RectangleShape hTop(sf::Vector2f(16.0f, 8.0f));
-        hTop.setFillColor(heartColor);
-        hTop.setPosition(hx, hy);
-        m_window.draw(hTop);
+        float hx = hStartX + i * (heartW + heartGap);
 
-        sf::RectangleShape hMid(sf::Vector2f(20.0f, 8.0f));
-        hMid.setFillColor(heartColor);
-        hMid.setOrigin(2.0f, 0.0f);
-        hMid.setPosition(hx, hy + 6.0f);
-        m_window.draw(hMid);
+        // Bosse gauche du coeur (cercle)
+        sf::CircleShape bLeft(9.0f);
+        bLeft.setFillColor(cFill);
+        bLeft.setOutlineColor(cOutline);
+        bLeft.setOutlineThickness(1.5f);
+        bLeft.setOrigin(9.0f, 9.0f);
+        bLeft.setPosition(hx + 9.0f, hY + 9.0f);
+        m_window.draw(bLeft);
 
-        sf::RectangleShape hBot(sf::Vector2f(12.0f, 6.0f));
-        hBot.setFillColor(heartColor);
-        hBot.setOrigin(-2.0f, 0.0f);
-        hBot.setPosition(hx, hy + 12.0f);
-        m_window.draw(hBot);
+        // Bosse droite du coeur (cercle)
+        sf::CircleShape bRight(9.0f);
+        bRight.setFillColor(cFill);
+        bRight.setOutlineColor(cOutline);
+        bRight.setOutlineThickness(1.5f);
+        bRight.setOrigin(9.0f, 9.0f);
+        bRight.setPosition(hx + 27.0f, hY + 9.0f);
+        m_window.draw(bRight);
+
+        // Corps central (rectangle qui lie les deux bosses)
+        sf::RectangleShape body(sf::Vector2f(heartW, 14.0f));
+        body.setFillColor(cFill);
+        body.setPosition(hx, hY + 5.0f);
+        m_window.draw(body);
+
+        // Pointe inferieure du coeur (triangle)
+        sf::ConvexShape tip;
+        tip.setPointCount(3);
+        tip.setPoint(0, sf::Vector2f(0.0f,     0.0f));
+        tip.setPoint(1, sf::Vector2f(heartW,   0.0f));
+        tip.setPoint(2, sf::Vector2f(heartW/2.0f, 16.0f));
+        tip.setFillColor(cFill);
+        tip.setOutlineColor(cOutline);
+        tip.setOutlineThickness(1.0f);
+        tip.setPosition(hx, hY + 16.0f);
+        m_window.draw(tip);
     }
 
     // ---- Instructions bas d'ecran ----
     sf::Text ctrl = makeText("[ESPACE/HAUT] Sauter    [BAS] Se baisser", 12, sf::Color(80, 110, 160));
     ctrl.setPosition(10.0f, Constants::WINDOW_HEIGHT - 20.0f);
     m_window.draw(ctrl);
+
+    // ---- Hint au-dessus de chaque obstacle proche ----
+    // Aide le joueur a savoir quelle touche utiliser
+    for (auto& obs : m_obstacles) {
+        float ox = obs->getX();
+        // Afficher seulement si l obstacle est dans la zone visible a droite
+        if (ox > 50.0f && ox < static_cast<float>(Constants::WINDOW_WIDTH)) {
+            std::string hint = (obs->getType() == ObstacleType::GROUND)
+                ? "SAUTER !" : "SE BAISSER !";
+            sf::Color hintColor = (obs->getType() == ObstacleType::GROUND)
+                ? sf::Color(0, 220, 255, 200) : sf::Color(255, 160, 0, 200);
+            sf::Text hintText = makeText(hint, 13, hintColor);
+            hintText.setPosition(ox, 370.0f);
+            m_window.draw(hintText);
+        }
+    }
 }
 
 // ============================================================
-//  drawCapsule()
+//  drawCapsule() â€” Capsule futuriste grande et lumineuse
+//
+//  La capsule est dessinee entiererement en code SFML :
+//    - Corps principal : grand rectangle vert negatif avec
+//      cadre cyan epais et effet de lueur pulsante
+//    - Hublot : grand cercle cyan avec reflet blanc
+//    - Moteurs : deux rectangles oranges en bas
+//    - Flammes : cercles qui pulsent selon m_capsuleGlow
+//    - Label "CAPSULE" clignotant au-dessus
+//
+//  La capsule fait 110x80px pour etre bien visible.
 // ============================================================
 void Game::drawCapsule() {
-    m_window.draw(m_capsule);
-    m_window.draw(m_capsuleWindow);
-    sf::Text label = makeText(">> CAPSULE <<", 13, Constants::COLOR_ACCENT_GREEN);
-    label.setPosition(
-        m_capsuleX + 45.0f - label.getLocalBounds().width / 2.0f,
-        m_capsule.getPosition().y - 22.0f
-    );
-    m_window.draw(label);
+    float cx = m_capsuleX;
+    float cy = m_capsule.getPosition().y;  // Y deja calcule dans updatePlaying
+
+    // Lueur pulsante (timer stocke dans m_capsule via getPosition abuse â€”
+    // on utilise m_shakeTimer comme proxy car il est dispo, sinon on
+    // calcule depuis le temps de jeu)
+    static float glowT = 0.0f;
+    glowT += 0.016f;  // ~60fps
+    float glow = (std::sin(glowT * 4.0f) + 1.0f) * 0.5f;
+    sf::Uint8 glowAlpha = static_cast<sf::Uint8>(100 + glow * 155);
+    sf::Color glowColor(0, static_cast<sf::Uint8>(200 + glow*55), 100, glowAlpha);
+
+    // ---- Halo exterieur (fond lumineux) ----
+    sf::RectangleShape halo(sf::Vector2f(120.0f, 90.0f));
+    halo.setFillColor(sf::Color(0, 255, 120, static_cast<sf::Uint8>(20 + glow*30)));
+    halo.setPosition(cx - 5.0f, cy - 5.0f);
+    m_window.draw(halo);
+
+    // ---- Corps principal ----
+    sf::RectangleShape body(sf::Vector2f(110.0f, 80.0f));
+    body.setFillColor(sf::Color(20, 45, 75));
+    body.setOutlineColor(glowColor);
+    body.setOutlineThickness(3.5f);
+    body.setPosition(cx, cy);
+    m_window.draw(body);
+
+    // ---- Bandes laterales (details metalliques) ----
+    sf::RectangleShape stripeL(sf::Vector2f(10.0f, 80.0f));
+    stripeL.setFillColor(sf::Color(0, static_cast<sf::Uint8>(160 + glow*60), 100, 180));
+    stripeL.setPosition(cx + 2.0f, cy);
+    m_window.draw(stripeL);
+
+    sf::RectangleShape stripeR(sf::Vector2f(10.0f, 80.0f));
+    stripeR.setFillColor(sf::Color(0, static_cast<sf::Uint8>(160 + glow*60), 100, 180));
+    stripeR.setPosition(cx + 98.0f, cy);
+    m_window.draw(stripeR);
+
+    // ---- Grand hublot central ----
+    sf::CircleShape porthole(24.0f);
+    porthole.setFillColor(sf::Color(0, static_cast<sf::Uint8>(180 + glow*75), 255, 220));
+    porthole.setOutlineColor(sf::Color(0, 240, 255));
+    porthole.setOutlineThickness(3.0f);
+    porthole.setOrigin(24.0f, 24.0f);
+    porthole.setPosition(cx + 55.0f, cy + 35.0f);
+    m_window.draw(porthole);
+
+    // Reflet blanc sur le hublot (coin haut-gauche)
+    sf::CircleShape reflet(8.0f);
+    reflet.setFillColor(sf::Color(255, 255, 255, 120));
+    reflet.setOrigin(8.0f, 8.0f);
+    reflet.setPosition(cx + 43.0f, cy + 22.0f);
+    m_window.draw(reflet);
+
+    // ---- Moteurs en bas ----
+    sf::RectangleShape motor1(sf::Vector2f(22.0f, 14.0f));
+    motor1.setFillColor(sf::Color(60, 60, 80));
+    motor1.setOutlineColor(sf::Color(255, 140, 0));
+    motor1.setOutlineThickness(2.0f);
+    motor1.setPosition(cx + 15.0f, cy + 80.0f);
+    m_window.draw(motor1);
+
+    sf::RectangleShape motor2(sf::Vector2f(22.0f, 14.0f));
+    motor2.setFillColor(sf::Color(60, 60, 80));
+    motor2.setOutlineColor(sf::Color(255, 140, 0));
+    motor2.setOutlineThickness(2.0f);
+    motor2.setPosition(cx + 73.0f, cy + 80.0f);
+    m_window.draw(motor2);
+
+    // Flammes des moteurs (pulsent)
+    sf::Uint8 flameA = static_cast<sf::Uint8>(180 + glow * 75);
+    sf::CircleShape flame1(static_cast<float>(6 + glow * 5));
+    flame1.setFillColor(sf::Color(255, 120, 0, flameA));
+    flame1.setOrigin(flame1.getRadius(), 0.0f);
+    flame1.setPosition(cx + 26.0f, cy + 94.0f);
+    m_window.draw(flame1);
+
+    sf::CircleShape flame2(static_cast<float>(6 + glow * 5));
+    flame2.setFillColor(sf::Color(255, 120, 0, flameA));
+    flame2.setOrigin(flame2.getRadius(), 0.0f);
+    flame2.setPosition(cx + 84.0f, cy + 94.0f);
+    m_window.draw(flame2);
+
+    // ---- Label "CAPSULE DE SAUVETAGE" clignotant ----
+    if (static_cast<int>(glowT * 3.0f) % 2 == 0) {
+        sf::Text label = makeText("CAPSULE DE SAUVETAGE", 14, glowColor);
+        label.setPosition(
+            cx + 55.0f - label.getLocalBounds().width / 2.0f,
+            cy - 26.0f
+        );
+        m_window.draw(label);
+    }
 }
 
 // ============================================================
-//  drawRobotPreview() — Robot dessin en formes SFML
+//  drawRobotPreview() â€” Robot dessin en formes SFML
 // ============================================================
 void Game::drawRobotPreview(float cx, float cy, float scale) {
     auto rect = [&](float x, float y, float w, float h,
@@ -649,7 +816,7 @@ void Game::drawRobotPreview(float cx, float cy, float scale) {
 }
 
 // ============================================================
-//  drawButton() — Bouton menu avec surlignage
+//  drawButton() â€” Bouton menu avec surlignage
 // ============================================================
 void Game::drawButton(const std::string& label, float y, bool selected) {
     float bw = 280.0f, bh = 46.0f;
@@ -708,7 +875,7 @@ void Game::drawMainMenu() {
 }
 
 // ============================================================
-//  drawAboutScreen() — Histoire + controles
+//  drawAboutScreen() â€” Histoire + controles
 // ============================================================
 void Game::drawAboutScreen() {
     sf::RectangleShape overlay(sf::Vector2f(Constants::WINDOW_WIDTH, Constants::WINDOW_HEIGHT));
@@ -765,7 +932,7 @@ void Game::drawAboutScreen() {
     healthInfo.setPosition(Constants::WINDOW_WIDTH / 2.0f - healthInfo.getLocalBounds().width / 2.0f, 380.0f);
     m_window.draw(healthInfo);
 
-    sf::Text healthInfo2 = makeText("A zero : Game Over. Survivez 20s pour faire apparaitre la capsule !", 14, sf::Color(170, 170, 200));
+    sf::Text healthInfo2 = makeText("A zero : Game Over. Survivez 60s pour faire apparaitre la capsule !", 14, sf::Color(170, 170, 200));
     healthInfo2.setPosition(Constants::WINDOW_WIDTH / 2.0f - healthInfo2.getLocalBounds().width / 2.0f, 404.0f);
     m_window.draw(healthInfo2);
 
@@ -778,37 +945,59 @@ void Game::drawAboutScreen() {
 }
 
 // ============================================================
-//  drawVictoryScreen() — Overlay "Merci de m'avoir sauve !"
+//  drawVictoryScreen() â€” Overlay "Merci de m'avoir sauve !"
 // ============================================================
 void Game::drawVictoryScreen() {
+    // Fond vert sombre semi-transparent (different du Game Over noir)
     sf::RectangleShape overlay(sf::Vector2f(Constants::WINDOW_WIDTH, Constants::WINDOW_HEIGHT));
-    overlay.setFillColor(sf::Color(0, 0, 0, 150));
+    overlay.setFillColor(sf::Color(0, 20, 10, 165));
     m_window.draw(overlay);
 
-    sf::Text title = makeText("MISSION REUSSIE !", 46, Constants::COLOR_ACCENT_GREEN);
-    title.setPosition(Constants::WINDOW_WIDTH / 2.0f - title.getLocalBounds().width / 2.0f, 130.0f);
+    // Ligne decorative haut
+    sf::RectangleShape topLine(sf::Vector2f(Constants::WINDOW_WIDTH, 4.0f));
+    topLine.setFillColor(Constants::COLOR_ACCENT_GREEN);
+    topLine.setPosition(0.0f, 100.0f);
+    m_window.draw(topLine);
+
+    // Titre principal â€” grand et vert
+    sf::Text title = makeText("MISSION REUSSIE !", 50, Constants::COLOR_ACCENT_GREEN);
+    title.setPosition(Constants::WINDOW_WIDTH / 2.0f - title.getLocalBounds().width / 2.0f, 115.0f);
     m_window.draw(title);
 
-    sf::Text thanks = makeText("Merci de m'avoir sauve !", 28, sf::Color(255, 220, 100));
-    thanks.setPosition(Constants::WINDOW_WIDTH / 2.0f - thanks.getLocalBounds().width / 2.0f, 195.0f);
+    // Message du robot
+    sf::Text thanks = makeText("Merci de m'avoir sauve !", 32, sf::Color(255, 230, 80));
+    thanks.setPosition(Constants::WINDOW_WIDTH / 2.0f - thanks.getLocalBounds().width / 2.0f, 185.0f);
     m_window.draw(thanks);
 
-    sf::Text sub = makeText("Le robot est en securite dans la capsule.", 18, Constants::COLOR_HUD_TEXT);
-    sub.setPosition(Constants::WINDOW_WIDTH / 2.0f - sub.getLocalBounds().width / 2.0f, 240.0f);
+    sf::Text sub = makeText("Le robot est en securite dans la capsule.", 19, Constants::COLOR_HUD_TEXT);
+    sub.setPosition(Constants::WINDOW_WIDTH / 2.0f - sub.getLocalBounds().width / 2.0f, 235.0f);
     m_window.draw(sub);
 
+    // Ligne separatrice
+    sf::RectangleShape sep(sf::Vector2f(400.0f, 2.0f));
+    sep.setFillColor(sf::Color(0, 150, 80));
+    sep.setPosition(Constants::WINDOW_WIDTH / 2.0f - 200.0f, 272.0f);
+    m_window.draw(sep);
+
+    // Score
     std::string sc = "Temps de survie : " + Utils::formatTime(m_finalScore);
-    sf::Text score = makeText(sc, 22, Constants::COLOR_ACCENT_CYAN);
+    sf::Text score = makeText(sc, 24, Constants::COLOR_ACCENT_CYAN);
     score.setPosition(Constants::WINDOW_WIDTH / 2.0f - score.getLocalBounds().width / 2.0f, 285.0f);
     m_window.draw(score);
 
-    sf::Text replay = makeText("[ ENTREE ] Retour au menu", 17, sf::Color(120, 170, 120));
-    replay.setPosition(Constants::WINDOW_WIDTH / 2.0f - replay.getLocalBounds().width / 2.0f, 360.0f);
+    // Ligne decorative bas
+    sf::RectangleShape botLine(sf::Vector2f(Constants::WINDOW_WIDTH, 4.0f));
+    botLine.setFillColor(Constants::COLOR_ACCENT_GREEN);
+    botLine.setPosition(0.0f, 370.0f);
+    m_window.draw(botLine);
+
+    sf::Text replay = makeText("[ ENTREE ] Retour au menu", 18, sf::Color(100, 200, 120));
+    replay.setPosition(Constants::WINDOW_WIDTH / 2.0f - replay.getLocalBounds().width / 2.0f, 385.0f);
     m_window.draw(replay);
 }
 
 // ============================================================
-//  drawExplosionScreen() — Ecran rouge, temps ecoule
+//  drawExplosionScreen() â€” Ecran rouge, temps ecoule
 // ============================================================
 void Game::drawExplosionScreen() {
     // Fond rouge intense pour simuler l'explosion
@@ -855,7 +1044,7 @@ void Game::drawExplosionScreen() {
 }
 
 // ============================================================
-//  drawGameOverScreen() — Sante a zero
+//  drawGameOverScreen() â€” Sante a zero
 // ============================================================
 void Game::drawGameOverScreen() {
     sf::RectangleShape overlay(sf::Vector2f(Constants::WINDOW_WIDTH, Constants::WINDOW_HEIGHT));

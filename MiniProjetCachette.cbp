@@ -40,16 +40,20 @@
 			<Add directory="../../../../../msys64/ucrt64/lib" />
 		</Linker>
 		<Unit filename="Src/Entity.cpp" />
+		<Unit filename="Src/Hud.cpp" />
 		<Unit filename="Src/Menu.cpp" />
 		<Unit filename="Src/Obstacle.cpp" />
 		<Unit filename="Src/Utils.cpp" />
+		<Unit filename="Src/background.cpp" />
 		<Unit filename="Src/game.cpp" />
 		<Unit filename="Src/main.cpp" />
 		<Unit filename="Src/player.cpp" />
 		<Unit filename="include/Entity.hpp" />
+		<Unit filename="include/Hud.hpp" />
 		<Unit filename="include/Menu.hpp" />
 		<Unit filename="include/Obstacle.hpp" />
 		<Unit filename="include/Utils.hpp" />
+		<Unit filename="include/background.hpp" />
 		<Unit filename="include/game.hpp" />
 		<Unit filename="include/player.hpp" />
 		<Extensions />

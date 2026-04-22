@@ -5,32 +5,40 @@
 #include <memory>
 #include "Player.hpp"
 #include "Obstacle.hpp"
+#include "Background.hpp"
+#include "HUD.hpp"
 #include "Utils.hpp"
 
 // ============================================================
-//  Game.hpp — Coeur du jeu Station Evac
+//  Game.hpp — Coordinateur principal du jeu
 //
-//  ETATS DU JEU :
-//    MAIN_MENU → ABOUT  (retour au menu)
-//    MAIN_MENU → READY  (JOUER clique : robot a l'arret, attend ESPACE)
-//    READY     → PLAYING (joueur appuie sur ESPACE)
+//  RÔLE : Game orchestre toutes les autres classes.
+//  Il ne fait plus lui-même le rendu du décor (Background)
+//  ni du HUD (HUD) — il délègue ces responsabilités.
+//
+//  CONCEPT POO ILLUSTRÉ : Composition
+//  Game "a un" Background, "a un" HUD, "a un" Player.
+//  C'est différent de l'héritage ("est un").
+//
+//  FLUX DES ÉTATS :
+//    MAIN_MENU → READY  (bouton JOUER)
+//    READY     → PLAYING (touche ESPACE)
 //    PLAYING   → VICTORY / GAME_OVER / EXPLOSION
-//
-//  AUDIO : SFML Audio (sf::SoundBuffer + sf::Sound + sf::Music)
-//    Fichiers attendus dans assets/ :
-//      jump.wav, duck.wav, hit.wav, win.wav, music.ogg
+//    Fin       → MAIN_MENU (touche ENTRÉE)
 // ============================================================
 
+// Enum des états du jeu (remplace les int magiques)
 enum class GameState {
-    MAIN_MENU,
-    ABOUT,
-    READY,      // Robot a l'arret sur la piste, attend ESPACE
-    PLAYING,
-    VICTORY,
-    EXPLOSION,
-    GAME_OVER
+    MAIN_MENU,  // Menu principal avec 3 boutons
+    ABOUT,      // Écran "À Propos"
+    READY,      // Robot à l'arrêt, attend ESPACE pour démarrer
+    PLAYING,    // Partie en cours
+    VICTORY,    // Robot a atteint la capsule
+    EXPLOSION,  // Temps écoulé, station explose
+    GAME_OVER   // Robot à court de cœurs
 };
 
+// Enum pour les boutons du menu (plus lisible que 0/1/2)
 enum class MenuButton {
     PLAY  = 0,
     ABOUT = 1,
@@ -39,127 +47,109 @@ enum class MenuButton {
 
 class Game {
 public:
+    // Constructeur : initialise la fenêtre et toutes les ressources
     Game();
+
+    // Destructeur : SFML libère ses ressources automatiquement
+    // (sf::RenderWindow, sf::Sound, sf::Music ont leurs propres destructeurs)
     ~Game();
+
+    // Lance la boucle principale (bloquante jusqu'à fermeture)
     void run();
 
 private:
-    // ── Fenetre ───────────────────────────────────────────────
-    sf::RenderWindow m_window;
-    sf::Clock        m_clock;
-    sf::Font         m_font;
+    // ── Fenêtre et outils SFML ────────────────────────────────
+    sf::RenderWindow m_window;  // la fenêtre de rendu
+    sf::Clock        m_clock;   // horloge pour le deltaTime
+    sf::Font         m_font;    // police partagée entre HUD et menus
 
-    // ── Etat ──────────────────────────────────────────────────
-    GameState  m_state;
-    MenuButton m_selectedButton;
+    // ── État du jeu ───────────────────────────────────────────
+    GameState  m_state;           // état courant
+    MenuButton m_selectedButton;  // bouton surligné dans le menu
 
-    // ── Gameplay ──────────────────────────────────────────────
-    float m_explosionTimer;
-    float m_survivalTime;
-    float m_scrollSpeed;
-    float m_spawnInterval;
-    float m_spawnTimer;
-    bool  m_gameWon;
-    float m_finalScore;
+    // ── Variables de gameplay ─────────────────────────────────
+    float m_explosionTimer;   // secondes restantes avant explosion
+    float m_survivalTime;     // secondes de survie accumulées
+    float m_scrollSpeed;      // vitesse actuelle des obstacles (px/s)
+    float m_spawnInterval;    // intervalle entre deux obstacles (s)
+    float m_spawnTimer;       // compteur depuis le dernier spawn
+    bool  m_gameWon;          // true = robot a touché la capsule
+    float m_finalScore;       // score affiché sur l'écran victoire
 
-    // ── Screen shake ──────────────────────────────────────────
+    // ── Screen shake (tremblement d'écran lors d'une collision) ─
     bool         m_shakeActive;
     float        m_shakeTimer;
     sf::Vector2f m_shakeOffset;
 
-    // ── Entites ───────────────────────────────────────────────
+    // ── Entités du jeu ────────────────────────────────────────
+    // std::unique_ptr : gestion automatique de la mémoire (pas de delete manuel)
     std::unique_ptr<Player>                m_player;
+    // std::vector : conteneur dynamique de la STL
     std::vector<std::unique_ptr<Obstacle>> m_obstacles;
 
-    // ── Capsule ───────────────────────────────────────────────
+    // ── Capsule de sauvetage ──────────────────────────────────
     bool               m_capsuleVisible;
     float              m_capsuleX;
+    float              m_capsuleGlowTimer;
     sf::RectangleShape m_capsule;
     sf::CircleShape    m_capsuleWindow;
-    float              m_capsuleGlowTimer; // timer local pour la capsule
 
-    // ── Decor : etoiles (2 couches) ───────────────────────────
-    struct StarLayer {
-        std::vector<sf::CircleShape> stars;
-        float speed;
-    };
-    StarLayer m_starLayers[2];
+    // ── Décor et HUD (classes dédiées) ───────────────────────
+    // COMPOSITION : Game utilise Background et HUD comme membres
+    Background m_background;
+    HUD        m_hud;
 
-    // ── Decor : panneaux metalliques ──────────────────────────
-    struct PanelStrip {
-        sf::RectangleShape rect;
-        sf::Color          color;
-        float              speed;
-    };
-    std::vector<PanelStrip> m_bgPanels;
-
-    // ── Decor : lune (parallaxe lente) ────────────────────────
-    struct Crater {
-        sf::Vector2f offset;  // position relative au centre de la lune
-        float        radius;
-    };
-    sf::CircleShape      m_moon;
-    std::vector<Crater>  m_moonCraters;
-    float                m_moonX;
-    float                m_moonY;
-
-    // ── Visuels fixes ─────────────────────────────────────────
+    // Visuels fixes du terrain
     sf::RectangleShape m_floorRect;
     sf::RectangleShape m_ceilingRect;
-    sf::RectangleShape m_timerBarBg;
-    sf::RectangleShape m_timerBarFill;
-    sf::RectangleShape m_progressBarBg;
-    sf::RectangleShape m_progressBarFill;
 
-    // ── Audio ─────────────────────────────────────────────────
-    // SoundBuffers : stockent les donnees audio en RAM
+    // ── Audio SFML ────────────────────────────────────────────
+    // sf::SoundBuffer : stocke les données audio en mémoire RAM
     sf::SoundBuffer m_bufJump;
     sf::SoundBuffer m_bufDuck;
     sf::SoundBuffer m_bufHit;
     sf::SoundBuffer m_bufWin;
+    sf::SoundBuffer m_bufGameOver; // NOUVEAU : son de game over
 
-    // Sounds : jouent un buffer (on peut en jouer plusieurs en meme temps)
+    // sf::Sound : joue un SoundBuffer (peut se superposer)
     sf::Sound m_sndJump;
     sf::Sound m_sndDuck;
     sf::Sound m_sndHit;
     sf::Sound m_sndWin;
+    sf::Sound m_sndGameOver; // NOUVEAU
 
-    // Music : streame depuis le disque (plus efficace pour les longs morceaux)
+    // sf::Music : streame depuis le disque (pour les longs morceaux)
     sf::Music m_music;
 
-    bool m_audioLoaded;  // true si au moins les fichiers sont trouves
+    bool m_audioLoaded; // false si les fichiers audio sont absents
 
-    // ── Methodes ──────────────────────────────────────────────
-    void processEvents();
-    void update(float deltaTime);
-    void render();
+    // ── Méthodes privées : organisation de la boucle ──────────
+    void processEvents();                  // lecture clavier/fenêtre
+    void update(float deltaTime);          // logique frame par frame
+    void render();                         // dessin de la frame
 
-    void updatePlaying(float deltaTime);
-    void updateParallax(float deltaTime);
-    void updateMoon(float deltaTime);
-    void updateShake(float deltaTime);
-    void checkCollisions();
-    void spawnObstacle();
-    void cleanObstacles();
+    void updatePlaying(float deltaTime);   // logique spécifique en jeu
+    void checkCollisions();                // détection FloatRect
+    void spawnObstacle();                  // crée un obstacle aléatoire
+    void cleanObstacles();                 // supprime les hors-écran
+    void updateShake(float deltaTime);     // anime le tremblement
 
-    void drawBackground();    // etoiles + panneaux + lune
-    void drawMoon();
-    void drawHUD();
+    // Dessin des écrans
     void drawCapsule();
-    void drawReadyScreen();
     void drawMainMenu();
     void drawAboutScreen();
+    void drawReadyScreen();
     void drawVictoryScreen();
     void drawExplosionScreen();
     void drawGameOverScreen();
-    void drawButton(const std::string& label, float y, bool selected);
     void drawRobotPreview(float cx, float cy, float scale);
+    void drawButton(const std::string& label, float y, bool selected);
 
-    void startGame();
-    void resetGame();
-    void triggerScreenShake(float duration);
-    void loadAudio();
-
+    // Utilitaires
+    void     startGame();
+    void     resetGame();
+    void     triggerScreenShake(float duration);
+    void     loadAudio();
     bool     loadFont();
     sf::Text makeText(const std::string& str, unsigned int size, sf::Color color);
 };

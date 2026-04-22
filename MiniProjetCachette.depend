@@ -1,8 +1,8 @@
 # depslib dependency file v1.0
-1776695896 source:c:\users\dell\documents\fssm\miniprojetcachette\src\entity.cpp
-	"Entity.hpp"
+1776805123 source:c:\users\dell\documents\fssm\miniprojetcachette\src\entity.cpp
+	"../include/Entity.hpp"
 
-1776789728 source:c:\users\dell\documents\fssm\miniprojetcachette\src\game.cpp
+1776860709 source:c:\users\dell\documents\fssm\miniprojetcachette\src\game.cpp
 	"../include/Game.hpp"
 	"../include/Utils.hpp"
 	<cmath>
@@ -436,7 +436,7 @@
 	"../include/Utils.hpp"
 	<cmath>
 
-1776778261 source:c:\users\dell\documents\fssm\miniprojetcachette\src\player.cpp
+1776805123 source:c:\users\dell\documents\fssm\miniprojetcachette\src\player.cpp
 	"../include/Player.hpp"
 	"../include/Utils.hpp"
 	<cmath>
@@ -476,13 +476,15 @@
 1776805123 c:\users\dell\documents\fssm\miniprojetcachette\include\entity.hpp
 	<SFML/Graphics.hpp>
 
-1776778261 c:\users\dell\documents\fssm\miniprojetcachette\include\game.hpp
+1776858578 c:\users\dell\documents\fssm\miniprojetcachette\include\game.hpp
 	<SFML/Graphics.hpp>
 	<SFML/Audio.hpp>
 	<vector>
 	<memory>
 	"Player.hpp"
 	"Obstacle.hpp"
+	"Background.hpp"
+	"HUD.hpp"
 	"Utils.hpp"
 
 1776805123 c:\users\dell\documents\fssm\miniprojetcachette\include\player.hpp
@@ -495,9 +497,27 @@
 	<SFML/Graphics.hpp>
 	<string>
 
-1776695896 source:c:\users\dell\documents\fssm\miniprojetcachette\src\utils.cpp
-	"Utils.hpp"
+1776805123 source:c:\users\dell\documents\fssm\miniprojetcachette\src\utils.cpp
+	"../include/Utils.hpp"
 	<random>
 	<sstream>
 	<iomanip>
+
+1776858578 c:\users\dell\documents\fssm\miniprojetcachette\include\background.hpp
+	<SFML/Graphics.hpp>
+	<vector>
+
+1776858578 c:\users\dell\documents\fssm\miniprojetcachette\include\hud.hpp
+	<SFML/Graphics.hpp>
+	<string>
+
+1776858578 source:c:\users\dell\documents\fssm\miniprojetcachette\src\background.cpp
+	"../include/Background.hpp"
+	"../include/Utils.hpp"
+	<cmath>
+
+1776858578 source:c:\users\dell\documents\fssm\miniprojetcachette\src\hud.cpp
+	"../include/HUD.hpp"
+	"../include/Utils.hpp"
+	<cmath>
 
